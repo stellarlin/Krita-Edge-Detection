@@ -1,0 +1,1 @@
+# Krita-Normal-Map
