@@ -1,6 +1,6 @@
 """Init file for the plugin folder."""
 
-from .normal_map_perwitt import *
+from .normal_map_perwitt import Normal_map_Perwitt
 
 # And add the extension to Krita's list of extensions:
 app = Krita.instance()
