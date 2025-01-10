@@ -28,16 +28,31 @@ class Normal_map_Perwitt(Extension):
         # parameter 3 = location of menu entry
         action.triggered.connect(self.action_triggered)
 
-    def to_greyscale(self, image):
-        # Ensure the image is in float format for accurate calculations
-        image_float = image.astype(np.float32)
+    def to_greyscale(self, rgb):
+        return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
 
-        # Apply the NTSC formula for each pixel
-        return (0.299 * image_float[:, :, 0] +  # Red channel
-                     0.587 * image_float[:, :, 1] +  # Green channel
-                     0.114 * image_float[:, :, 2])  # Blue channel
+    def convolution(self, image, kernel):
+        # height and width of the image
+        # Get image dimensions
+        image_height, image_width = image.shape[:2]
+        kernel_height, kernel_width = kernel.shape[:2]
 
-    def apply_prewitt_operator(self, image):
+        # Initialize out
+        out = np.zeros_like(image, dtype=np.float32)
+
+        # Loop through the image
+        for i in np.arange(1, image_height - 1):
+            for j in np.arange(1, image_width - 1):
+                # Extract the region of interest (the local neighborhood in the image)
+                region = image[(i - 1):(i + 2), (j - 1):(j + 2)]
+
+                # Compute the sum of element-wise multiplication between the region and the filter
+                out[i - 1, j - 1] = np.sum(region * kernel)
+
+        # return convolution
+        return out
+
+    def normal_prewitt(self, image):
 
         # greyscale
         greyscale = self.to_greyscale(image)
@@ -53,46 +68,26 @@ class Normal_map_Perwitt(Extension):
         # Get image dimensions
         height, width = greyscale.shape[:2]
 
-        # Initialize gradients
-        Gx = np.zeros_like(greyscale, dtype=np.float32)
-        Gy = np.zeros_like(greyscale, dtype=np.float32)
-
-        # Padding the grayscale image to handle edges
-        padded = np.pad(greyscale, pad_width=1, mode='constant', constant_values=0)
-
-        # Apply the Prewitt operator manually
-        for i in range(1, height + 1):  # Loop over padded image
-            for j in range(1, width + 1):
-                # Extract the 3x3 region
-                region = padded[i - 1:i + 2, j - 1:j + 2]
-                # Compute gradients
-                Gx[i - 1, j - 1] = np.sum(region * kernel_x)
-                Gy[i - 1, j - 1] = np.sum(region * kernel_y)
-
         # Combine Gx, Gy, and 1 into a gradient vector
         gradients = np.zeros((height, width, 2), dtype=np.float32)
-        gradients[:, :, 0] = Gx  # Gradient in x direction
-        gradients[:, :, 1] = Gy  # Gradient in y direction
+        gradients[:, :, 0] = self.convolution(greyscale,kernel_x)  # Gradient in x direction
+        gradients[:, :, 1] = self.convolution(greyscale,kernel_y) # Gradient in y direction
 
-        return gradients
+        return self.to_rgb(gradients)
 
     def normalize (self, chanel):
         return ((chanel - chanel.min()) / (chanel.max() - chanel.min()) * 255).astype(np.uint8)
 
-    def gradient_to_rgb(self, gradients):
+    def to_rgb(self, gradients):
 
         # Extract Gx and Gy
         Gx = gradients[:, :, 0]
         Gy = gradients[:, :, 1]
 
-        # Normalize Gx and Gy to range [0, 255]
-        Gx_normalized = self.normalize(Gx)
-        Gy_normalized = self.normalize(Gy)
-
         # Create RGB mapping
         rgb_image = np.zeros((*gradients.shape[:2], 4), dtype=np.uint8)
-        rgb_image[:, :, 0] = Gx_normalized  # Map Gx to Red
-        rgb_image[:, :, 1] = Gy_normalized  # Map Gy to Green
+        rgb_image[:, :, 0] = self.normalize(Gx)  # Map Gx to Red
+        rgb_image[:, :, 1] = self.normalize(Gy)  # Map Gy to Green
         rgb_image[:, :, 2] = 255  # Set Blue to constant 255 (from the 1 in [Gx, Gy, 1])
         rgb_image[:, :, 3] = 255 # Set Alpha to constant 255
         return rgb_image
@@ -113,15 +108,18 @@ class Normal_map_Perwitt(Extension):
         #doc.rootNode().addChildNode(layer, None)
         #doc.refreshProjection()
 
+        #copy previos state
+        new_layer = layer.duplicate()
+        new_layer.setName("Duplicate Layer")
+        root_node = doc.rootNode()
+        root_node.addChildNode(new_layer, None)
+
         # extract image
         image_data = layer.pixelData(0, 0, width, height) # shape=(height, width, 4) channels = BRAG
         image_np = np.frombuffer(image_data, dtype=np.uint8).reshape((height, width, 4))
 
         # get gradients using Perwitt 3x3
-        gradients = self.apply_prewitt_operator(image_np)
-
-        # transform to RGB
-        image_np = self.gradient_to_rgb(gradients)
+        image_np = self.normal_prewitt(image_np)
 
         # set image
         # Assuming shape=(height, width, 4)
