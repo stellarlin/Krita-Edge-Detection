@@ -4,11 +4,11 @@
 from krita import * # pylint: disable=import-error
 import numpy as np
 
-EXTENSION_ID = "pykrita_normal_map_perwitt"
-MENU_ENTRY = "Normal map using Perwitt 3x3"
+EXTENSION_ID = "pykrita_stellarlin_edge_detection"
+MENU_ENTRY = "stellarlin's Edge Detection"
 
 
-class Normal_map_Perwitt(Extension):
+class stellarlin_edge_detection(Extension):
     """The main class of the plugin."""
 
     def __init__(self, parent):
@@ -52,7 +52,7 @@ class Normal_map_Perwitt(Extension):
         # return convolution
         return out
 
-    def normal_prewitt(self, image):
+    def prewitt3x3(self, image):
 
         # greyscale
         greyscale = self.to_greyscale(image)
@@ -65,32 +65,27 @@ class Normal_map_Perwitt(Extension):
                              [0, 0, 0],
                              [-1, -1, -1]])
 
-        # Get image dimensions
-        height, width = greyscale.shape[:2]
+        out = np.zeros_like(image, dtype=np.uint8)
 
         # Combine Gx, Gy, and 1 into a gradient vector
-        gradients = np.zeros((height, width, 2), dtype=np.float32)
-        gradients[:, :, 0] = self.convolution(greyscale,kernel_x)  # Gradient in x direction
-        gradients[:, :, 1] = self.convolution(greyscale,kernel_y) # Gradient in y direction
+        Gx = self.convolution(greyscale,kernel_x)  # Gradient in x direction
+        Gy = self.convolution(greyscale,kernel_y) # Gradient in y direction
 
-        return self.to_rgb(gradients)
+        # calculate the gradient magnitude of vectors
+        gradient_magnitude = np.hypot(Gx , Gy)
 
-    def normalize (self, chanel):
+        # normalize to the range [0, 255]
+        gradient_magnitude = self.normalize(gradient_magnitude)
+        out[:,:,0] = gradient_magnitude
+        out[:, :, 1] = gradient_magnitude
+        out[:, :, 2] = gradient_magnitude
+        out[:, :, 3] = 255
+
+        return out
+
+    def normalize(self, chanel):
         return ((chanel - chanel.min()) / (chanel.max() - chanel.min()) * 255).astype(np.uint8)
 
-    def to_rgb(self, gradients):
-
-        # Extract Gx and Gy
-        Gx = gradients[:, :, 0]
-        Gy = gradients[:, :, 1]
-
-        # Create RGB mapping
-        rgb_image = np.zeros((*gradients.shape[:2], 4), dtype=np.uint8)
-        rgb_image[:, :, 0] = self.normalize(Gx)  # Map Gx to Red
-        rgb_image[:, :, 1] = self.normalize(Gy)  # Map Gy to Green
-        rgb_image[:, :, 2] = 255  # Set Blue to constant 255 (from the 1 in [Gx, Gy, 1])
-        rgb_image[:, :, 3] = 255 # Set Alpha to constant 255
-        return rgb_image
 
     def action_triggered(self):
         """This method is called when the action is triggered."""
@@ -118,10 +113,11 @@ class Normal_map_Perwitt(Extension):
         image_data = layer.pixelData(0, 0, width, height) # shape=(height, width, 4) channels = BRAG
         image_np = np.frombuffer(image_data, dtype=np.uint8).reshape((height, width, 4))
 
+
         # get gradients using Perwitt 3x3
-        image_np = self.normal_prewitt(image_np)
+        image_np = self.prewitt3x3(image_np)
 
         # set image
         # Assuming shape=(height, width, 4)
 
-        layer.setPixelData(image_np.tobytes(), 0, 0, width, height)
+        new_layer.setPixelData(image_np.tobytes(), 0, 0, width, height)

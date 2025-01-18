@@ -1,9 +1,9 @@
 """Init file for the plugin folder."""
 
-from .normal_map_perwitt import Normal_map_Perwitt
+from .stellarlin_edge_detection import stellarlin_edge_detection
 
 # And add the extension to Krita's list of extensions:
 app = Krita.instance()
 # Instantiate your class:
-extension = Normal_map_Perwitt(parent=app)
+extension = stellarlin_edge_detection(parent=app)
 app.addExtension(extension)

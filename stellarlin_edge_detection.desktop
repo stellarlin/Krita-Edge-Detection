@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Service
 ServiceTypes=Krita/PythonPlugin
-X-KDE-Library=normal_map_perwitt
+X-KDE-Library=stellarlin_edge_detection
 X-Python-2-Compatible=false
 X-Krita-Manual=Manual.html
-Name=normal_map_perwitt
+Name=stellarlin_edge_detection
 Comment= description of plugin
