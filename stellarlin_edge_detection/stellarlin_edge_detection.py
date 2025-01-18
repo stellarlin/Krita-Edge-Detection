@@ -1,5 +1,8 @@
 
-# pylint: disable=C0301:line-too-long, C0103:invalid-name
+from PyQt5.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QRadioButton,
+    QLineEdit, QPushButton, QButtonGroup
+)
 
 from krita import * # pylint: disable=import-error
 import numpy as np
@@ -37,14 +40,18 @@ class stellarlinPrewitt(Extension):
         image_height, image_width = image.shape[:2]
         kernel_height, kernel_width = kernel.shape[:2]
 
+        filter_side_h = kernel_height // 2
+        filter_side_w = kernel_width // 2
+
+
         # Initialize out
         out = np.zeros_like(image, dtype=np.float32)
 
         # Loop through the image
-        for i in np.arange(1, image_height - 1):
-            for j in np.arange(1, image_width - 1):
+        for i in np.arange(filter_side_h, image_height - filter_side_h):
+            for j in np.arange(filter_side_w, image_width - filter_side_w):
                 # Extract the region of interest (the local neighborhood in the image)
-                region = image[(i - 1):(i + 2), (j - 1):(j + 2)]
+                region = image[(i - filter_side_h):(i + filter_side_h + 1), (j - filter_side_w):(j + filter_side_w + 1)]
 
                 # Compute the sum of element-wise multiplication between the region and the filter
                 out[i - 1, j - 1] = np.sum(region * kernel)
