@@ -11,7 +11,7 @@ EXTENSION_ID = "pykrita_stellarlin_edge_detection"
 MENU_ENTRY = "stellarlin's Edge Detection"
 
 
-class stellarlinPrewitt(Extension):
+class stellarlin_edge_detection(Extension):
     """The main class of the plugin."""
 
     def __init__(self, parent):
