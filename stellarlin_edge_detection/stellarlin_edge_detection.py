@@ -11,6 +11,114 @@ EXTENSION_ID = "pykrita_stellarlin_edge_detection"
 MENU_ENTRY = "stellarlin's Edge Detection"
 
 
+class ModeSelectionDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Select Edge Detection Mode")
+        self.setGeometry(100, 100, 300, 300)
+
+
+        layout = QVBoxLayout()
+
+        # Dropdown (ComboBox)
+        self.mode_label = QLabel("Select Mode:")
+        self.mode_box = QComboBox()
+        self.mode_box.addItems(["Prewitt", "Sobel", "Custom"])
+
+        # Custom matrix input (initially hidden)
+        self.kernel_x_label = QLabel("Enter Kernel X:")
+        self.kernel_x = QLineEdit()
+        self.kernel_x.setPlaceholderText("[[1,0,-1],[1,0,-1],[1,0,-1]]")
+        self.kernel_x.hide()
+        self.kernel_x_label.hide()
+
+        # Status label
+        self.statusLabel_x = QLabel()
+
+        self.kernel_y_label = QLabel("Enter Kernel Y:")
+        self.kernel_y = QLineEdit()
+        self.kernel_y.setPlaceholderText("[[1,1,1],[0,0,0],[-1,-1,-1]]")
+        self.kernel_y.hide()
+        self.kernel_y_label.hide()
+
+        # Status label
+        self.statusLabel_y = QLabel()
+
+        # Buttons
+        self.apply_button = QPushButton("Apply")
+        self.cancel_button = QPushButton("Cancel")
+
+        # Add widgets to layout
+        layout.addWidget(self.mode_label)
+        layout.addWidget(self.mode_box)
+        layout.addWidget(self.kernel_x_label)
+        layout.addWidget(self.kernel_x)
+        layout.addWidget(self.statusLabel_x)
+        layout.addWidget(self.kernel_y_label)
+        layout.addWidget(self.kernel_y)
+        layout.addWidget(self.statusLabel_y)
+        layout.addWidget(self.apply_button)
+        layout.addWidget(self.cancel_button)
+
+        self.setLayout(layout)
+
+        # Connect button signals
+        self.kernel_x.textChanged.connect(self.validate_kernel_x)
+        self.kernel_y.textChanged.connect(self.validate_kernel_y)
+        self.mode_box.currentTextChanged.connect(self.toggle_custom_input)
+        self.apply_button.clicked.connect(self.accept)
+        self.cancel_button.clicked.connect(self.reject)
+
+
+    def toggle_custom_input(self):
+        """Show/hide custom matrix input based on mode selection."""
+        if self.mode_box.currentText() == "Custom":
+            self.kernel_x_label.show()
+            self.kernel_x.show()
+            self.kernel_y_label.show()
+            self.kernel_y.show()
+        else:
+            self.kernel_x_label.hide()
+            self.kernel_x.hide()
+            self.statusLabel_x = ""
+            self.kernel_y_label.hide()
+            self.kernel_y.hide()
+            self.statusLabel_y = ""
+
+    def validate_kernel_x (self):
+        return self.validate_custom_matrix(self.kernel_x.text(), self.statusLabel_x)
+
+    def validate_kernel_y (self):
+        return self.validate_custom_matrix(self.kernel_y.text(), self.statusLabel_y)
+
+    def validate_custom_matrix(self, text, status):
+        """Validate if the input is a properly formatted matrix."""
+        try:
+            matrix = ast.literal_eval(text)  # Convert string to Python list
+            if isinstance(matrix, list) and all(isinstance(row, list) for row in matrix):
+                row_lengths = set(len(row) for row in matrix)
+                if len(row_lengths) == 1:  # Ensure all rows have same length
+                    status.setText("✅ Matrix format is correct")
+                    return True
+            status.setText("❌ Invalid matrix format")
+        except (SyntaxError, ValueError):
+            status.setText("❌ Invalid input")
+
+        return False
+
+    def get_selected_mode(self):
+        """Returns selected mode or custom matrix."""
+        mode = self.mode_box.currentText()
+        if mode == "Custom" and (not self.validate_kernel_x() or not self.validate_kernel_y()):
+            QMessageBox.warning(self, "Invalid Input", "Please enter a valid matrix format.")
+            return None
+        return mode
+
+    def get_custom_kernels(self):
+        return  np.array(ast.literal_eval(self.kernel_x.text())), np.array(ast.literal_eval(self.kernel_y.text()))
+
+
 class stellarlin_edge_detection(Extension):
     """The main class of the plugin."""
 
