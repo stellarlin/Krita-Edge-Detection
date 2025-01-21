@@ -2,7 +2,8 @@ import ast
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QRadioButton,
-    QLineEdit, QPushButton, QButtonGroup, QComboBox, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
+    QLineEdit, QPushButton, QButtonGroup, QComboBox, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem,
+    QDesktopWidget
 )
 
 from krita import * # pylint: disable=import-error
@@ -19,6 +20,7 @@ class ModeSelectionDialog(QDialog):
         self.setWindowTitle("Select Edge Detection Mode")
         self.setGeometry(100, 100, 300, 300)
 
+        self.center()
 
         layout = QVBoxLayout()
 
@@ -70,6 +72,12 @@ class ModeSelectionDialog(QDialog):
         self.mode_box.currentTextChanged.connect(self.toggle_custom_input)
         self.apply_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
+
+    def center(self):
+        """Center the window on the screen."""
+        screen = QDesktopWidget().screenGeometry()
+        size = self.geometry()
+        self.move((screen.width() - size.width()) // 2, (screen.height() - size.height()) // 2)
 
 
     def toggle_custom_input(self):
