@@ -116,7 +116,9 @@ K_y =
 -1 & -1 & -1
 \end{bmatrix}
 ```
-Example of usage of Prewitt Operator on high-quality photos by [Pascal van de Vendel](https://unsplash.com/@pascalvendel)
+Example of usage of Prewitt Operator:
+|![orig_1](Other/peppers.jpg)|![prewitt](Other/peppers_prewitt.jpg)|
+|--|--|
 
 **Sobel Operator:**
 ```math
@@ -134,13 +136,18 @@ K_y =
 -1 & -2 & -1
 \end{bmatrix}
 ```
-Example of usage of Sobel Operator on high-quality photos by [Pascal van de Vendel](https://unsplash.com/@pascalvendel):
+Example of usage of Sobel Operator:
+|![orig_2](Other/peppers.jpg)|![sobel](Other/peppers_sobel.jpg)|
+|--|--|
 
 ### Custom Kernel Support
 
 Users can define their own convolution kernels of different height and width. The plugin validates the input format and applies the custom kernel pair.
 
-Example of  usage of custom kernels (Roberts Cross Edge Detection Gx = [[1,0].[0,-1]], Gy = [[0,1].[-1,0]]) on high-quality photos by [Pascal van de Vendel](https://unsplash.com/@pascalvendel):
+Example of  usage of custom kernels (Roberts Cross Edge Detection Gx = [[1,0].[0,-1]], Gy = [[0,1].[-1,0]]):
+
+|![orig_3](Other/peppers.jpg)|![custom](Other/peppers_custom.jpg)|
+|--|--|
 
 
 ## Algorithm and Workflow
